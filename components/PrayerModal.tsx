@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { PrayerCategory, Prayer } from '../types';
-import { suggestPrayer } from '../services/geminiService';
+
 
 interface PrayerModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<PrayerCategory>(PrayerCategory.GRATIDAO);
   const [date, setDate] = useState(initialDate);
-  const [isSuggesting, setIsSuggesting] = useState(false);
+
 
   React.useEffect(() => {
     if (isOpen) {
@@ -42,12 +42,86 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
     // Close handled by parent, but good to reset? Parent usually closes.
   };
 
-  const handleAISuggestion = async () => {
-    setIsSuggesting(true);
-    const suggestion = await suggestPrayer(category);
-    setContent(suggestion);
-    setIsSuggesting(false);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const recognitionRef = React.useRef<any>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
+
+  const toggleDictation = () => {
+    if (isListening) {
+      stopDictation();
+    } else {
+      startDictation();
+    }
   };
+
+  const startDictation = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Seu navegador não suporta ditado por voz. Tente usar o Google Chrome.");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+
+      recognition.lang = 'pt-BR';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let final = '';
+        let interim = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+
+        if (final) {
+          setContent(prev => prev + (prev ? ' ' : '') + final);
+        }
+        setInterimText(interim);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        if (event.error === 'not-allowed') {
+          alert('Permissão de microfone negada. Verifique as configurações do navegador.');
+        }
+        setIsListening(false);
+        setInterimText('');
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        setInterimText('');
+      };
+
+      recognition.start();
+    } catch (error) {
+      console.error("Erro ao iniciar ditado:", error);
+      alert("Erro ao iniciar o microfone.");
+    }
+  };
+
+  const stopDictation = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      setInterimText('');
+    }
+  };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (!isOpen) return null;
 
@@ -103,16 +177,15 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
               <label className="block text-sm font-bold text-slate-500 dark:text-text-secondary">Sua Oração</label>
               <button
                 type="button"
-                onClick={handleAISuggestion}
-                disabled={isSuggesting}
-                className="text-xs text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
+                onClick={toggleDictation}
+                className={`text-xs flex items-center gap-1 transition-all ${isListening ? 'text-red-500 font-bold animate-pulse' : 'text-slate-500 hover:text-primary'}`}
               >
-                <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-                {isSuggesting ? 'Pensando...' : 'Sugestão da IA'}
+                <span className="material-symbols-outlined text-[16px]">{isListening ? 'mic_off' : 'mic'}</span>
+                {isListening ? 'Ouvindo...' : 'Ditar Oração'}
               </button>
             </div>
             <textarea
-              value={content}
+              value={content + (interimText ? ' ' + interimText : '')}
               onChange={(e) => setContent(e.target.value)}
               className="w-full h-32 bg-slate-50 dark:bg-background-dark border-slate-200 dark:border-surface-border rounded-lg text-slate-900 dark:text-white focus:ring-primary focus:border-primary resize-none"
               placeholder="Escreva sua conversa com Deus..."

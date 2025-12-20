@@ -205,7 +205,7 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
   const suggestions = ["Resumo da minha jornada", "Sugestão de oração", "Versículo de conforto", "Dicas de disciplina"];
 
   return (
-    <div className="flex bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-border rounded-xl -mx-4 -my-4 h-[calc(100vh-130px)] md:h-[calc(100vh-100px)] overflow-hidden shadow-sm">
+    <div className="flex bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-border rounded-xl h-[calc(100dvh-140px)] md:h-[calc(100vh-100px)] overflow-hidden shadow-sm md:-mx-4 md:-my-4">
 
       <aside className={`${isSidebarOpen ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-64 border-r border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-background-dark/50 absolute md:relative z-20 h-full`}>
         <div className="p-4">
@@ -240,7 +240,6 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
 
       <div className="flex-1 flex flex-col relative w-full">
         <div className="md:hidden p-4 border-b border-slate-100 dark:border-surface-border flex items-center justify-between">
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 -ml-2 text-slate-500"><span className="material-symbols-outlined">menu</span></button>
           <span className="font-bold text-slate-700 dark:text-white">Mentor IA</span>
           <button onClick={handleNewChat} className="p-2 -mr-2 text-primary"><span className="material-symbols-outlined">add_circle</span></button>
         </div>
