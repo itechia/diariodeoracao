@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Verse, PrayerCategory } from "../types";
 
-const genAI = new GoogleGenerativeAI('AIzaSyAA4Fwy-HiUT65c-_Ajcua4g4Kw_J6knzQ');
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
 export const getVerseOfTheDay = async (theme?: string): Promise<Verse> => {
   const prompt = theme

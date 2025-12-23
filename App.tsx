@@ -7,7 +7,7 @@ import JournalView from './components/JournalView';
 import SettingsView from './components/SettingsView';
 import ChatView from './components/ChatView';
 import BottomNav from './components/BottomNav';
-import PrayerModal from './components/PrayerModal';
+import PrayerEditor from './components/PrayerEditor';
 import LoginView from './components/LoginView';
 import RegisterView from './components/RegisterView';
 import { Prayer, PrayerCategory, Verse } from './types';
@@ -152,6 +152,7 @@ const App: React.FC = () => {
         category: p.category as PrayerCategory, // Assuming DB stores valid enum strings
         date: p.date,
         isFavorite: p.is_favorite,
+        images: p.images,
       }));
       setPrayers(mappedPrayers);
     }
@@ -199,7 +200,8 @@ const App: React.FC = () => {
         title: prayerData.title,
         content: prayerData.content,
         category: prayerData.category,
-        date: prayerData.date
+        date: prayerData.date,
+        images: prayerData.images
       }).eq('id', updatedPrayer.id);
 
       if (error) {
@@ -225,6 +227,7 @@ const App: React.FC = () => {
         content: prayerData.content,
         category: prayerData.category,
         date: prayerData.date,
+        images: prayerData.images,
         is_favorite: false,
         user_id: (await supabase.auth.getUser()).data.user?.id
       }).select().single();
@@ -370,7 +373,7 @@ const App: React.FC = () => {
       <BottomNav currentView={currentView} onViewChange={setCurrentView} />
 
       {isModalOpen && (
-        <PrayerModal
+        <PrayerEditor
           isOpen={isModalOpen}
           onClose={() => { setIsModalOpen(false); setEditingPrayer(null); }}
           onSubmit={handleSavePrayer}

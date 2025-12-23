@@ -46,6 +46,7 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
   const recognitionRef = React.useRef<any>(null);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const toggleDictation = () => {
     if (isListening) {
@@ -56,10 +57,11 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
   };
 
   const startDictation = () => {
+    setErrorMsg(null);
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Seu navegador não suporta ditado por voz. Tente usar o Google Chrome.");
+      setErrorMsg("Seu navegador não suporta ditado por voz. Tente usar o Google Chrome.");
       return;
     }
 
@@ -73,6 +75,7 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
 
       recognition.onstart = () => {
         setIsListening(true);
+        setErrorMsg(null);
       };
 
       recognition.onresult = (event: any) => {
@@ -96,7 +99,9 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
       recognition.onerror = (event: any) => {
         console.error("Speech recognition error", event.error);
         if (event.error === 'not-allowed') {
-          alert('Permissão de microfone negada. Verifique as configurações do navegador.');
+          setErrorMsg('Permissão de microfone negada. Verifique as configurações.');
+        } else {
+          setErrorMsg('Erro no reconhecimento de voz.');
         }
         setIsListening(false);
         setInterimText('');
@@ -110,7 +115,7 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
       recognition.start();
     } catch (error) {
       console.error("Erro ao iniciar ditado:", error);
-      alert("Erro ao iniciar o microfone.");
+      setErrorMsg("Erro ao iniciar o microfone.");
     }
   };
 
@@ -184,6 +189,12 @@ const PrayerModal: React.FC<PrayerModalProps> = ({ isOpen, onClose, onSubmit, in
                 {isListening ? 'Ouvindo...' : 'Ditar Oração'}
               </button>
             </div>
+            {errorMsg && (
+              <div className="mb-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded border border-red-100 dark:border-red-900/30 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">error</span>
+                {errorMsg}
+              </div>
+            )}
             <textarea
               value={content + (interimText ? ' ' + interimText : '')}
               onChange={(e) => setContent(e.target.value)}

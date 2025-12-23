@@ -14,6 +14,7 @@ export interface Prayer {
   category: PrayerCategory;
   date: string; // Formato ISO
   isFavorite: boolean;
+  images?: string[];
 }
 
 export interface Verse {
@@ -27,12 +28,6 @@ export interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   prayers: Prayer[];
-}
-
-export interface User {
-  name: string;
-  email: string;
-  avatar?: string;
 }
 
 export interface User {

@@ -27,3 +27,7 @@ export const CATEGORY_COLORS = {
         text: 'text-primary',
     },
 };
+
+export const CHAT_SYSTEM_PROMPT = `Você é um Mentor Espiritual sábio. 
+       Contexto: {{CONTEXT}}.
+       Seja direto, use negrito nas chaves, cite a Bíblia.`;
