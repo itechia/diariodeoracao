@@ -77,7 +77,61 @@ const App: React.FC = () => {
   }, [prayers, selectedDate]);
 
   const handleUpdateCategories = (newCategories: Category[]) => {
+    // Deprecated for direct add/delete, but keeping for compatibility if needed.
+    // Ideally we won't use this anymore.
     setCategories(newCategories);
+  };
+
+  const fetchCategories = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (data && data.length > 0) {
+      setCategories(data.map(c => ({ id: c.id, name: c.name, colorTheme: c.color_theme })));
+    } else {
+      // Seed defaults
+      const defaults = DEFAULT_CATEGORIES.map(c => ({
+        user_id: user.id,
+        name: c.name,
+        color_theme: c.colorTheme
+      }));
+
+      const { data: newCats, error: insertError } = await supabase
+        .from('categories')
+        .insert(defaults)
+        .select();
+
+      if (newCats) {
+        setCategories(newCats.map(c => ({ id: c.id, name: c.name, colorTheme: c.color_theme })));
+      }
+    }
+  };
+
+  const addCategory = async (cat: Omit<Category, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({ user_id: user.id, name: cat.name, color_theme: cat.colorTheme })
+      .select()
+      .single();
+
+    if (data) {
+      setCategories(prev => [...prev, { id: data.id, name: data.name, colorTheme: data.colorTheme }]);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (!error) {
+      setCategories(prev => prev.filter(c => c.id !== id));
+    }
   };
 
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
@@ -105,11 +159,13 @@ const App: React.FC = () => {
         if (!wasAuthenticated) {
           fetchProfile(session.user);
           fetchPrayers();
+          fetchCategories(); // Fetch categories from DB
           setCurrentView(prev => prev === 'configuracoes' ? 'calendario' : prev);
         }
       } else {
         setUser(null);
         setPrayers([]);
+        // setCategories(DEFAULT_CATEGORIES); // Optional: reset to defaults on logout?
       }
     });
 
@@ -369,7 +425,8 @@ const App: React.FC = () => {
               onUpdateUser={handleUpdateUser}
               user={user}
               categories={categories}
-              onUpdateCategories={handleUpdateCategories}
+              onAddCategory={addCategory}
+              onDeleteCategory={deleteCategory}
             />
           )}
           {currentView === 'chat' && (

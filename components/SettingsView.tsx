@@ -11,7 +11,8 @@ interface SettingsViewProps {
   onUpdateUser: (user: User) => void;
   user: User | null;
   categories: Category[];
-  onUpdateCategories: (categories: Category[]) => void;
+  onAddCategory: (category: Omit<Category, 'id'>) => void;
+  onDeleteCategory: (id: string) => void;
 }
 
 import { supabase } from '../services/supabase';
@@ -27,7 +28,7 @@ const COLORS = [
   { name: 'Pink', value: 'pink', class: 'bg-pink-500' },
 ];
 
-const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogout, onDeleteAccount, onUpdateUser, user, categories, onUpdateCategories }) => {
+const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogout, onDeleteAccount, onUpdateUser, user, categories, onAddCategory, onDeleteCategory }) => {
   const [name, setName] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [isUploading, setIsUploading] = useState(false);
@@ -52,18 +53,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
 
   const handleAddCategory = () => {
     if (!newCatName.trim()) return;
-    const newCat: Category = {
-      id: Date.now().toString(),
+    onAddCategory({
       name: newCatName.toUpperCase(),
       colorTheme: newCatColor
-    };
-    onUpdateCategories([...categories, newCat]);
+    });
     setNewCatName('');
   };
 
   const handleDeleteCategory = (id: string) => {
     if (window.confirm('Excluir esta categoria? Orações existentes manterão o nome mas perderão a cor.')) {
-      onUpdateCategories(categories.filter(c => c.id !== id));
+      onDeleteCategory(id);
     }
   };
 
