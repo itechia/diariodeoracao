@@ -10,7 +10,7 @@ import BottomNav from './components/BottomNav';
 import PrayerEditor from './components/PrayerEditor';
 import LoginView from './components/LoginView';
 import RegisterView from './components/RegisterView';
-import { Prayer, Verse, Category } from './types';
+import { Prayer, Verse, Category, User } from './types';
 import { getVerseOfTheDay } from './services/geminiService';
 import { supabase } from './services/supabase';
 
@@ -127,6 +127,17 @@ const App: React.FC = () => {
     }
   };
 
+  const updateCategory = async (category: Category) => {
+    const { error } = await supabase
+      .from('categories')
+      .update({ name: category.name, color_theme: category.colorTheme })
+      .eq('id', category.id);
+
+    if (!error) {
+      setCategories(prev => prev.map(c => c.id === category.id ? category : c));
+    }
+  };
+
   const deleteCategory = async (id: string) => {
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (!error) {
@@ -137,7 +148,16 @@ const App: React.FC = () => {
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const [user, setUser] = useState<{ name: string, email: string, avatar?: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Apply accent color
+    if (user?.accentColor) {
+      document.documentElement.style.setProperty('--primary-color', user.accentColor);
+    } else {
+      document.documentElement.style.setProperty('--primary-color', '#2badee');
+    }
+  }, [user?.accentColor]);
 
   useEffect(() => {
     // Verificar sessão atual
@@ -183,14 +203,16 @@ const App: React.FC = () => {
       setUser({
         name: data.full_name || sessionUser.user_metadata.name || 'Usuário',
         email: sessionUser.email || '',
-        avatar: data.avatar_url || sessionUser.user_metadata.avatar_url
+        avatar: data.avatar_url || sessionUser.user_metadata.avatar_url,
+        accentColor: data.accent_color
       });
     } else {
       // Profile doesn't exist (old user), create it
       const newProfile = {
         id: sessionUser.id,
         full_name: sessionUser.user_metadata.name || 'Usuário',
-        avatar_url: sessionUser.user_metadata.avatar_url
+        avatar_url: sessionUser.user_metadata.avatar_url,
+        accent_color: '#2badee'
       };
 
       const { error: insertError } = await supabase.from('profiles').insert(newProfile);
@@ -199,13 +221,15 @@ const App: React.FC = () => {
         setUser({
           name: newProfile.full_name,
           email: sessionUser.email || '',
-          avatar: newProfile.avatar_url
+          avatar: newProfile.avatar_url,
+          accentColor: newProfile.accent_color
         });
       } else {
         // Fallback
         setUser({
           name: sessionUser.user_metadata.name || 'Usuário',
           email: sessionUser.email || '',
+          avatar: sessionUser.user_metadata.avatar_url
         });
       }
     }
@@ -426,6 +450,7 @@ const App: React.FC = () => {
               user={user}
               categories={categories}
               onAddCategory={addCategory}
+              onUpdateCategory={updateCategory}
               onDeleteCategory={deleteCategory}
             />
           )}

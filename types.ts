@@ -32,6 +32,7 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
+  accentColor?: string;
 }
 
 export type ViewMode = 'calendario' | 'diario' | 'configuracoes' | 'chat';

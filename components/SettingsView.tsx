@@ -12,6 +12,7 @@ interface SettingsViewProps {
   user: User | null;
   categories: Category[];
   onAddCategory: (category: Omit<Category, 'id'>) => void;
+  onUpdateCategory: (category: Category) => void;
   onDeleteCategory: (id: string) => void;
 }
 
@@ -28,15 +29,16 @@ const COLORS = [
   { name: 'Pink', value: 'pink', class: 'bg-pink-500' },
 ];
 
-const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogout, onDeleteAccount, onUpdateUser, user, categories, onAddCategory, onDeleteCategory }) => {
+const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogout, onDeleteAccount, onUpdateUser, user, categories, onAddCategory, onUpdateCategory, onDeleteCategory }) => {
   const [name, setName] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Categorias
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatColor, setNewCatColor] = useState('emerald');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [catName, setCatName] = useState('');
+  const [catColor, setCatColor] = useState('emerald');
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -51,18 +53,47 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
     setName(e.target.value);
   };
 
-  const handleAddCategory = () => {
-    if (!newCatName.trim()) return;
-    onAddCategory({
-      name: newCatName.toUpperCase(),
-      colorTheme: newCatColor
-    });
-    setNewCatName('');
+  const handleSaveCategory = () => {
+    if (!catName.trim()) return;
+
+    if (editingId) {
+      // Update existing
+      const categoryToUpdate = categories.find(c => c.id === editingId);
+      if (categoryToUpdate) {
+        onUpdateCategory({
+          ...categoryToUpdate,
+          name: catName.toUpperCase(),
+          colorTheme: catColor
+        });
+      }
+      setEditingId(null);
+    } else {
+      // Add new
+      onAddCategory({
+        name: catName.toUpperCase(),
+        colorTheme: catColor
+      });
+    }
+    setCatName('');
+    setCatColor('emerald');
+  };
+
+  const startEditing = (cat: Category) => {
+    setEditingId(cat.id);
+    setCatName(cat.name);
+    setCatColor(cat.colorTheme);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setCatName('');
+    setCatColor('emerald');
   };
 
   const handleDeleteCategory = (id: string) => {
     if (window.confirm('Excluir esta categoria? Orações existentes manterão o nome mas perderão a cor.')) {
       onDeleteCategory(id);
+      if (editingId === id) cancelEditing();
     }
   };
 
@@ -117,9 +148,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
     }
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (colorOverride?: string) => {
     if (!user) return;
-    setIsSaving(true);
+    const colorToSave = colorOverride || user.accentColor || '#2badee';
+
+    // If it's just a color update, don't show full loading state for better UX, or maybe yes?
+    // Let's allow background save for color if override is present
+    if (!colorOverride) setIsSaving(true);
+
     try {
       // Update Profiles Table
       const { error } = await supabase
@@ -128,20 +164,22 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
           id: (await supabase.auth.getUser()).data.user?.id,
           full_name: name,
           avatar_url: avatarUrl,
+          accent_color: colorToSave,
           updated_at: new Date()
         });
 
       if (error) throw error;
 
       // Update App State
-      onUpdateUser({ ...user, name, avatar: avatarUrl });
-      alert('Perfil atualizado com sucesso!');
+      onUpdateUser({ ...user, name, avatar: avatarUrl, accentColor: colorToSave });
+
+      if (!colorOverride) alert('Perfil atualizado com sucesso!');
 
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      alert('Erro ao salvar perfil.');
+      if (!colorOverride) alert('Erro ao salvar perfil.');
     } finally {
-      setIsSaving(false);
+      if (!colorOverride) setIsSaving(false);
     }
   };
 
@@ -149,7 +187,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
     <section className="flex-1 flex flex-col gap-8 animate-in zoom-in-95 duration-500 pb-20">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Configurações</h1>
-        <p className="text-slate-500 dark:text-text-secondary text-sm">Gerencie seu perfil e preferências.</p>
+        <p className="text-slate-500 dark:text-text-secondary text-sm">Gerencie seu perfil.</p>
       </div>
 
       <div className="flex flex-col gap-6">
@@ -206,7 +244,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
           </div>
           <div className="flex justify-end">
             <button
-              onClick={handleSaveProfile}
+              onClick={() => handleSaveProfile()}
               disabled={isSaving || isUploading}
               className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50 transition-all shadow-lg shadow-primary/20"
             >
@@ -234,26 +272,31 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
 
           <div className="flex flex-col gap-4 mb-6">
             {categories.map(cat => (
-              <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/20 rounded-xl">
+              <div key={cat.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${editingId === cat.id ? 'bg-primary/5 border-primary' : 'bg-slate-50 dark:bg-black/20 border-transparent'}`}>
                 <div className="flex items-center gap-3">
                   <div className={`size-4 rounded-full bg-${cat.colorTheme}-500 shadow-sm`}></div>
                   <span className="font-bold text-slate-700 dark:text-slate-200">{cat.name}</span>
                 </div>
-                <button onClick={() => handleDeleteCategory(cat.id)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                  <span className="material-symbols-outlined">delete</span>
-                </button>
+                <div className="flex gap-1">
+                  <button onClick={() => startEditing(cat)} className="text-slate-400 hover:text-primary transition-colors p-2 hover:bg-white dark:hover:bg-surface-dark rounded-lg">
+                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                  </button>
+                  <button onClick={() => handleDeleteCategory(cat.id)} className="text-slate-400 hover:text-rose-500 transition-colors p-2 hover:bg-white dark:hover:bg-surface-dark rounded-lg">
+                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 items-end border-t border-slate-100 dark:border-white/5 pt-4">
             <div className="flex-1 w-full">
-              <label className="block text-xs font-black uppercase text-slate-400 mb-1">Nova Etiqueta</label>
+              <label className="block text-xs font-black uppercase text-slate-400 mb-1">{editingId ? 'Editar Etiqueta' : 'Nova Etiqueta'}</label>
               <input
                 type="text"
                 placeholder="Ex: MILAGRES"
-                value={newCatName}
-                onChange={e => setNewCatName(e.target.value)}
+                value={catName}
+                onChange={e => setCatName(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-background-dark border-slate-200 dark:border-surface-border rounded-lg text-slate-900 dark:text-white uppercase"
               />
             </div>
@@ -263,20 +306,92 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
                 {COLORS.map(c => (
                   <button
                     key={c.value}
-                    onClick={() => setNewCatColor(c.value)}
-                    className={`size-8 rounded-full ${c.class} transition-transform hover:scale-110 ${newCatColor === c.value ? 'ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-surface-dark' : ''}`}
+                    onClick={() => setCatColor(c.value)}
+                    className={`size-8 rounded-full ${c.class} transition-transform hover:scale-110 ${catColor === c.value ? 'ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-surface-dark' : ''}`}
                     title={c.name}
                   />
                 ))}
               </div>
             </div>
-            <button
-              onClick={handleAddCategory}
-              disabled={!newCatName.trim()}
-              className="w-full md:w-auto px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              Adicionar
-            </button>
+            <div className="flex gap-2 w-full md:w-auto">
+              {editingId && (
+                <button
+                  onClick={cancelEditing}
+                  className="px-4 py-2 bg-slate-100 dark:bg-surface-border text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:opacity-90 transition-all"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                onClick={handleSaveCategory}
+                disabled={!catName.trim()}
+                className="flex-1 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
+              >
+                {editingId ? 'Salvar' : 'Adicionar'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Aparência */}
+        <div className="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-surface-border shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">palette</span>
+            Aparência
+          </h3>
+
+          <div className="flex flex-col gap-6">
+            <div>
+              <label className="block text-xs font-black uppercase text-slate-400 mb-2">Tema</label>
+              <div className="flex gap-2 p-1 bg-slate-100 dark:bg-black/20 rounded-xl w-fit">
+                <button
+                  onClick={() => theme === 'dark' && toggleTheme()}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${theme === 'light' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  <span className="material-symbols-outlined text-lg">light_mode</span>
+                  Claro
+                </button>
+                <button
+                  onClick={() => theme === 'light' && toggleTheme()}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${theme === 'dark' ? 'bg-surface-dark shadow text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  <span className="material-symbols-outlined text-lg">dark_mode</span>
+                  Escuro
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-black uppercase text-slate-400 mb-2">Cor de Destaque</label>
+              <div className="flex flex-wrap gap-3">
+                {[
+                  { name: 'Azul Celeste', value: '#2badee' },
+                  { name: 'Roxo Real', value: '#8b5cf6' },
+                  { name: 'Rosa Vibrante', value: '#ec4899' },
+                  { name: 'Laranja Solar', value: '#f97316' },
+                  { name: 'Verde Esperança', value: '#10b981' },
+                  { name: 'Dourado', value: '#eab308' },
+                ].map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => {
+                      if (user) {
+                        onUpdateUser({ ...user, accentColor: color.value });
+                        document.documentElement.style.setProperty('--primary-color', color.value);
+                        handleSaveProfile(color.value);
+                      }
+                    }}
+                    className={`size-10 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center ${user?.accentColor === color.value || (color.value === '#2badee' && !user?.accentColor) ? 'border-slate-900 dark:border-white' : 'border-transparent'}`}
+                    style={{ backgroundColor: color.value }}
+                    title={color.name}
+                  >
+                    {(user?.accentColor === color.value || (color.value === '#2badee' && !user?.accentColor)) && (
+                      <span className="material-symbols-outlined text-white text-lg drop-shadow-md">check</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

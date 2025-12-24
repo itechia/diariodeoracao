@@ -22,7 +22,7 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#2badee",
+                        "primary": "var(--primary-color)",
                         "background-light": "#f8fafc",
                         "background-dark": "#111618",
                         "surface-light": "#ffffff",
@@ -41,6 +41,10 @@
         }
     </script>
     <style>
+        :root {
+            --primary-color: #2badee;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
