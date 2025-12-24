@@ -338,7 +338,7 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 flex justify-center py-6 px-4 lg:px-8 bg-background-light dark:bg-background-dark pb-24 md:pb-6">
-        <div className="w-full max-w-[1400px] flex flex-col-reverse xl:flex-row gap-8">
+        <div className={`w-full max-w-[1400px] flex ${currentView === 'calendario' ? 'flex-col' : 'flex-col-reverse'} xl:flex-row gap-8`}>
           {currentView === 'calendario' && (
             <Calendar
               currentDate={currentDate}
