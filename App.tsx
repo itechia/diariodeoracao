@@ -10,14 +10,27 @@ import BottomNav from './components/BottomNav';
 import PrayerEditor from './components/PrayerEditor';
 import LoginView from './components/LoginView';
 import RegisterView from './components/RegisterView';
-import { Prayer, PrayerCategory, Verse } from './types';
+import { Prayer, Verse, Category } from './types';
 import { getVerseOfTheDay } from './services/geminiService';
 import { supabase } from './services/supabase';
 
 
+// Default categories to start with
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: '1', name: 'GRATIDÃO', colorTheme: 'emerald' },
+  { id: '2', name: 'INTERCESSÃO', colorTheme: 'blue' },
+  { id: '3', name: 'CRESCIMENTO', colorTheme: 'amber' },
+  { id: '4', name: 'CONFISSÃO', colorTheme: 'rose' },
+  { id: '5', name: 'FORÇA', colorTheme: 'purple' }
+];
 
 const App: React.FC = () => {
   const [prayers, setPrayers] = useState<Prayer[]>([]);
+  const [categories, setCategories] = useState<Category[]>(() => {
+    const saved = localStorage.getItem('categories');
+    return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -32,6 +45,10 @@ const App: React.FC = () => {
     }
     return 'dark';
   });
+
+  useEffect(() => {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }, [categories]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -59,7 +76,9 @@ const App: React.FC = () => {
     );
   }, [prayers, selectedDate]);
 
-
+  const handleUpdateCategories = (newCategories: Category[]) => {
+    setCategories(newCategories);
+  };
 
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -149,7 +168,7 @@ const App: React.FC = () => {
         id: p.id,
         title: p.title,
         content: p.content,
-        category: p.category as PrayerCategory, // Assuming DB stores valid enum strings
+        category: p.category, // Dynamic string from DB
         date: p.date,
         isFavorite: p.is_favorite,
         images: p.images,
@@ -319,7 +338,7 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 flex justify-center py-6 px-4 lg:px-8 bg-background-light dark:bg-background-dark pb-24 md:pb-6">
-        <div className="w-full max-w-[1400px] flex flex-col xl:flex-row gap-8">
+        <div className="w-full max-w-[1400px] flex flex-col-reverse xl:flex-row gap-8">
           {currentView === 'calendario' && (
             <Calendar
               currentDate={currentDate}
@@ -328,11 +347,13 @@ const App: React.FC = () => {
               setSelectedDate={setSelectedDate}
               prayers={prayers}
               onAddClick={() => { setEditingPrayer(null); setIsModalOpen(true); }}
+              categories={categories}
             />
           )}
           {currentView === 'diario' && (
             <JournalView
               prayers={prayers}
+              categories={categories}
               searchQuery={searchQuery}
               onToggleFavorite={toggleFavorite}
               onEditPrayer={handleEditPrayer}
@@ -347,12 +368,15 @@ const App: React.FC = () => {
               onDeleteAccount={handleDeleteAccount}
               onUpdateUser={handleUpdateUser}
               user={user}
+              categories={categories}
+              onUpdateCategories={handleUpdateCategories}
             />
           )}
           {currentView === 'chat' && (
             <ChatView
               prayers={prayers}
               userName={user?.name || 'Filho(a) de Deus'}
+              userAvatar={user?.avatar}
             />
           )}
 
@@ -366,6 +390,7 @@ const App: React.FC = () => {
             onDeletePrayer={handleDeletePrayer}
             selectedDateLabel={selectedDate.toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })}
             viewMode={currentView}
+            categories={categories}
           />
         </div>
       </main>
@@ -377,6 +402,7 @@ const App: React.FC = () => {
           isOpen={isModalOpen}
           onClose={() => { setIsModalOpen(false); setEditingPrayer(null); }}
           onSubmit={handleSavePrayer}
+          categories={categories}
           initialDate={selectedDate.toISOString().split('T')[0]}
           initialData={editingPrayer}
         />

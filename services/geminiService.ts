@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { Verse, PrayerCategory } from "../types";
+import { Verse } from "../types";
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
@@ -42,7 +42,7 @@ export const getVerseOfTheDay = async (theme?: string): Promise<Verse> => {
   }
 };
 
-export const suggestPrayer = async (category: PrayerCategory): Promise<string> => {
+export const suggestPrayer = async (category: string): Promise<string> => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(`Forneça um pequeno texto de oração moderna para a categoria: ${category}. Responda em Português do Brasil. Máximo de 30 palavras.`);

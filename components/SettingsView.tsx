@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-import { User } from '../types';
+import { User, Category } from '../types';
 
 interface SettingsViewProps {
   theme: 'light' | 'dark';
@@ -10,17 +10,33 @@ interface SettingsViewProps {
   onDeleteAccount: () => void;
   onUpdateUser: (user: User) => void;
   user: User | null;
+  categories: Category[];
+  onUpdateCategories: (categories: Category[]) => void;
 }
 
 import { supabase } from '../services/supabase';
 
-// ...
+const COLORS = [
+  { name: 'Emerald', value: 'emerald', class: 'bg-emerald-500' },
+  { name: 'Blue', value: 'blue', class: 'bg-blue-500' },
+  { name: 'Amber', value: 'amber', class: 'bg-amber-500' },
+  { name: 'Rose', value: 'rose', class: 'bg-rose-500' },
+  { name: 'Purple', value: 'purple', class: 'bg-purple-500' },
+  { name: 'Indigo', value: 'indigo', class: 'bg-indigo-500' },
+  { name: 'Cyan', value: 'cyan', class: 'bg-cyan-500' },
+  { name: 'Pink', value: 'pink', class: 'bg-pink-500' },
+];
 
-const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogout, onDeleteAccount, onUpdateUser, user }) => {
+const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogout, onDeleteAccount, onUpdateUser, user, categories, onUpdateCategories }) => {
   const [name, setName] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Categorias
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatColor, setNewCatColor] = useState('emerald');
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,6 +48,23 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
 
   const handleDisplayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
+  };
+
+  const handleAddCategory = () => {
+    if (!newCatName.trim()) return;
+    const newCat: Category = {
+      id: Date.now().toString(),
+      name: newCatName.toUpperCase(),
+      colorTheme: newCatColor
+    };
+    onUpdateCategories([...categories, newCat]);
+    setNewCatName('');
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    if (window.confirm('Excluir esta categoria? Orações existentes manterão o nome mas perderão a cor.')) {
+      onUpdateCategories(categories.filter(c => c.id !== id));
+    }
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,13 +147,69 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme, onLogou
   };
 
   return (
-    <section className="flex-1 flex flex-col gap-8 animate-in zoom-in-95 duration-500">
+    <section className="flex-1 flex flex-col gap-8 animate-in zoom-in-95 duration-500 pb-20">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Configurações</h1>
-        <p className="text-slate-500 dark:text-text-secondary text-sm">Gerencie seu perfil e dados.</p>
+        <p className="text-slate-500 dark:text-text-secondary text-sm">Gerencie seu perfil e preferências.</p>
       </div>
 
       <div className="flex flex-col gap-6">
+
+        {/* Categorias */}
+        <div className="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-surface-border shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">label</span>
+            Suas Etiquetas
+          </h3>
+
+          <div className="flex flex-col gap-4 mb-6">
+            {categories.map(cat => (
+              <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/20 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className={`size-4 rounded-full bg-${cat.colorTheme}-500 shadow-sm`}></div>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{cat.name}</span>
+                </div>
+                <button onClick={() => handleDeleteCategory(cat.id)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                  <span className="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 items-end border-t border-slate-100 dark:border-white/5 pt-4">
+            <div className="flex-1 w-full">
+              <label className="block text-xs font-black uppercase text-slate-400 mb-1">Nova Etiqueta</label>
+              <input
+                type="text"
+                placeholder="Ex: MILAGRES"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-background-dark border-slate-200 dark:border-surface-border rounded-lg text-slate-900 dark:text-white uppercase"
+              />
+            </div>
+            <div className="w-full md:w-auto">
+              <label className="block text-xs font-black uppercase text-slate-400 mb-1">Cor</label>
+              <div className="flex gap-2">
+                {COLORS.map(c => (
+                  <button
+                    key={c.value}
+                    onClick={() => setNewCatColor(c.value)}
+                    className={`size-8 rounded-full ${c.class} transition-transform hover:scale-110 ${newCatColor === c.value ? 'ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-surface-dark' : ''}`}
+                    title={c.name}
+                  />
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={handleAddCategory}
+              disabled={!newCatName.trim()}
+              className="w-full md:w-auto px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              Adicionar
+            </button>
+          </div>
+        </div>
+
         {/* Perfil */}
         <div className="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-surface-border shadow-sm">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">

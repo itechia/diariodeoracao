@@ -1,17 +1,15 @@
 
-export enum PrayerCategory {
-  GRATIDAO = 'GRATIDÃO',
-  INTERCESSAO = 'INTERCESSÃO',
-  CRESCIMENTO = 'CRESCIMENTO',
-  CONFISSAO = 'CONFISSÃO',
-  FORCA = 'FORÇA'
+export interface Category {
+  id: string;
+  name: string;
+  colorTheme: string; // e.g., 'emerald', 'blue', 'rose'
 }
 
 export interface Prayer {
   id: string;
   title: string;
   content: string;
-  category: PrayerCategory;
+  category: string; // Dynamic category name
   date: string; // Formato ISO
   isFavorite: boolean;
   images?: string[];

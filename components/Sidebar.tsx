@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Verse, Prayer, PrayerCategory } from '../types';
+import { Verse, Prayer, Category } from '../types';
 import PrayerCard from './PrayerCard';
 
 interface SidebarProps {
@@ -13,6 +13,7 @@ interface SidebarProps {
   onDeletePrayer: (id: string) => void;
   selectedDateLabel: string;
   viewMode: 'calendario' | 'diario' | 'configuracoes' | 'chat';
+  categories?: Category[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -24,7 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onEditPrayer,
   onDeletePrayer,
   selectedDateLabel,
-  viewMode
+  viewMode,
+  categories
 }) => {
   if (viewMode === 'chat') return null;
 
@@ -133,6 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <PrayerCard
                 key={prayer.id}
                 prayer={prayer}
+                categories={categories}
                 onToggleFavorite={onToggleFavorite}
                 onEdit={() => onEditPrayer(prayer)}
                 onDelete={() => onDeletePrayer(prayer.id)}

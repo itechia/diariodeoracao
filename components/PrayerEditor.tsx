@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Prayer, PrayerCategory } from '../types';
+import { Prayer, Category } from '../types';
 import { supabase } from '../services/supabase';
-import { CHAT_SYSTEM_PROMPT } from '../constants'; // Reusing if needed or just for consistency
+import { CHAT_SYSTEM_PROMPT } from '../constants';
 
 interface PrayerEditorProps {
     isOpen: boolean;
@@ -9,12 +9,13 @@ interface PrayerEditorProps {
     onSubmit: (prayer: Omit<Prayer, 'id' | 'isFavorite'>) => void;
     initialDate: string;
     initialData?: Prayer | null;
+    categories: Category[];
 }
 
-const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, initialDate, initialData }) => {
+const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, initialDate, initialData, categories }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [category, setCategory] = useState<PrayerCategory>(PrayerCategory.GRATIDAO);
+    const [category, setCategory] = useState<string>('');
     const [date, setDate] = useState(initialDate);
     const [images, setImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -36,14 +37,20 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
             } else {
                 setTitle('');
                 setContent('');
-                setCategory(PrayerCategory.GRATIDAO);
+                setCategory(categories[0]?.name || ''); // Default to first category
                 setDate(initialDate);
                 setImages([]);
             }
             setInterimText('');
             setVoiceError(null);
         }
-    }, [isOpen, initialData, initialDate]);
+    }, [isOpen, initialData, initialDate, categories]);
+
+    // ... (rest of image upload/voice logic methods - unchanged usually, but I need to ensure I don't delete them if I replace lines. I will use scoped replacement)
+
+    // Actually, I am replacing the top part up to end of use effect mostly. 
+    // And I need to replace the Dropdown rendering at the bottom.
+    // I will use two chunks.
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -65,7 +72,12 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
                 .from('prayer-images')
                 .getPublicUrl(filePath);
 
-            setImages(prev => [...prev, data.publicUrl]);
+            const imageUrl = data.publicUrl;
+            setImages(prev => [...prev, imageUrl]);
+
+            // Inject markdown at the end of content
+            setContent(prev => prev + `\n\n![Imagem](${imageUrl})\n`);
+
         } catch (error) {
             console.error('Error uploading image: ', error);
             alert('Erro ao fazer upload da imagem.');
@@ -165,6 +177,24 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
             </div>
 
             <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto p-4 md:p-6 pb-24">
+
+                {/* Image Grid - Moved to Top */}
+                {images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6 animate-in fade-in slide-in-from-top-4">
+                        {images.map((img, i) => (
+                            <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-surface-dark border border-slate-200 dark:border-white/10">
+                                <img src={img} alt={`Anexo ${i}`} className="w-full h-full object-cover" />
+                                <button
+                                    onClick={() => removeImage(i)}
+                                    className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                >
+                                    <span className="material-symbols-outlined text-sm">close</span>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {/* Date & Category */}
                 <div className="flex gap-4 mb-6">
                     <div className="flex-1">
@@ -180,10 +210,12 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Categoria</label>
                         <select
                             value={category}
-                            onChange={e => setCategory(e.target.value as PrayerCategory)}
+                            onChange={e => setCategory(e.target.value)}
                             className="w-full bg-slate-50 dark:bg-surface-dark/50 border-none rounded-lg text-slate-700 dark:text-slate-200 font-medium focus:ring-1 focus:ring-primary"
                         >
-                            {Object.values(PrayerCategory).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -201,33 +233,16 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
                 <textarea
                     value={content + (interimText ? ' ' + interimText : '')}
                     onChange={e => setContent(e.target.value)}
-                    placeholder="Escreva seus pensamentos..."
-                    className="w-full min-h-[200px] text-lg leading-relaxed bg-transparent border-none placeholder-slate-300 dark:placeholder-slate-700 text-slate-700 dark:text-slate-200 focus:ring-0 px-0 resize-none"
+                    placeholder="Escreva seus pensamentos... Use o botão de imagem para inserir fotos no texto."
+                    className="w-full min-h-[200px] text-lg leading-relaxed bg-transparent border-none placeholder-slate-300 dark:placeholder-slate-700 text-slate-700 dark:text-slate-200 focus:ring-0 px-0 resize-none font-sans"
                     style={{ minHeight: 'calc(100vh - 300px)' }}
                 />
-
-                {/* Image Grid */}
-                {images.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4 animate-in fade-in slide-in-from-bottom-4">
-                        {images.map((img, i) => (
-                            <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-surface-dark">
-                                <img src={img} alt={`Anexo ${i}`} className="w-full h-full object-cover" />
-                                <button
-                                    onClick={() => removeImage(i)}
-                                    className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <span className="material-symbols-outlined text-sm">close</span>
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
             </div>
 
             {/* Toolbar */}
             <div
                 className="border-t border-slate-100 dark:border-surface-border p-3 bg-white/80 dark:bg-black/80 backdrop-blur-md shrink-0"
-                style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+                style={{ paddingBottom: 'calc(32px + env(safe-area-inset-bottom))' }}
             >
                 <div className="max-w-2xl mx-auto flex items-center gap-4">
                     <label className="p-3 text-slate-500 hover:text-primary hover:bg-slate-50 dark:hover:bg-white/10 rounded-full cursor-pointer transition-all flex items-center justify-center">

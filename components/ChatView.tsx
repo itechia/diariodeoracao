@@ -21,9 +21,10 @@ interface ChatSession {
 interface ChatViewProps {
   prayers: Prayer[];
   userName: string;
+  userAvatar?: string;
 }
 
-const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
+const ChatView: React.FC<ChatViewProps> = ({ prayers, userName, userAvatar }) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -259,10 +260,14 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
       <div className="flex-1 flex flex-col h-full relative bg-white dark:bg-background-dark overflow-hidden">
 
         {/* Messages Container */}
+        {/* Messages Container */}
         <div className="flex-1 overflow-y-auto w-full scroll-smooth" ref={scrollRef}>
-          <div className="max-w-3xl mx-auto flex flex-col min-h-full p-4 md:p-8">
+          <div className="max-w-7xl mx-auto flex flex-col min-h-full p-4 md:p-8">
             {!currentSessionId && messages.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in duration-500 my-auto">
+              <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in duration-500 my-auto w-full">
+                <div className="size-20 bg-white dark:bg-black/20 rounded-full mx-auto mb-6 shadow-md border border-slate-100 dark:border-white/10 p-4">
+                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                </div>
                 <h1 className="text-4xl md:text-5xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 mb-2 tracking-tight">
                   Olá, {userName.split(' ')[0]}
                 </h1>
@@ -274,16 +279,15 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
               <div className="w-full space-y-6">
                 {messages.map((m) => (
                   <div key={m.id} className={`flex gap-4 w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {/* Model Icon: Use App Logo */}
                     {m.role === 'model' && (
-                      <div className="size-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center shrink-0 mt-1">
-                        <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 22C12 22 13.5 16.5 19 12C13.5 7.5 12 2 12 2C12 2 10.5 7.5 5 12C10.5 16.5 12 22 12 22Z" />
-                        </svg>
+                      <div className="size-8 rounded-full bg-white border border-slate-200 dark:border-white/10 dark:bg-white/10 flex items-center justify-center shrink-0 mt-1 p-1">
+                        <img src="/logo.png" alt="IA" className="w-full h-full object-contain" />
                       </div>
                     )}
 
                     <div className={`flex flex-col max-w-[85%] md:max-w-[75%] space-y-1 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      <div className={`px-5 py-3.5 text-[15px] leading-relaxed ${m.role === 'user' ? 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-100 rounded-3xl rounded-tr-sm' : 'text-slate-700 dark:text-slate-200'}`}>
+                      <div className={`px-5 py-3.5 text-[15px] leading-relaxed break-words whitespace-pre-wrap ${m.role === 'user' ? 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-100 rounded-3xl rounded-tr-sm' : 'text-slate-700 dark:text-slate-200'}`}>
                         <ReactMarkdown
                           components={{
                             strong: ({ node, ...props }) => <strong className="font-bold text-slate-900 dark:text-white" {...props} />,
@@ -297,14 +301,20 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
                         {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
+
+                    {/* User Icon: Use User Avatar */}
+                    {m.role === 'user' && (
+                      <div
+                        className="size-8 rounded-full bg-slate-200 dark:bg-white/10 shrink-0 mt-1 bg-cover bg-center border border-white/10"
+                        style={{ backgroundImage: `url("${userAvatar || 'https://picsum.photos/seed/spirit-user/100'}")` }}
+                      ></div>
+                    )}
                   </div>
                 ))}
                 {isLoading && (
                   <div className="flex gap-4 w-full justify-start">
-                    <div className="size-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center shrink-0 animate-pulse">
-                      <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 22C12 22 13.5 16.5 19 12C13.5 7.5 12 2 12 2C12 2 10.5 7.5 5 12C10.5 16.5 12 22 12 22Z" />
-                      </svg>
+                    <div className="size-8 rounded-full bg-white border border-slate-200 dark:border-white/10 dark:bg-white/10 flex items-center justify-center shrink-0 p-1">
+                      <img src="/logo.png" alt="IA" className="w-full h-full object-contain opacity-50" />
                     </div>
                     <div className="flex items-center gap-1 h-8">
                       <div className="size-2 bg-slate-300 dark:bg-slate-600 rounded-full animate-bounce delay-0"></div>
@@ -321,7 +331,7 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
 
         {/* Input Area - Flex Item (Not Absolute) */}
         <div className="p-4 bg-white dark:bg-background-dark border-t border-slate-100 dark:border-white/5 w-full shrink-0 z-20">
-          <div className="max-w-3xl mx-auto w-full">
+          <div className="max-w-7xl mx-auto w-full">
             <form
               onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
               className="flex items-center bg-slate-100 dark:bg-surface-dark/50 rounded-full border border-transparent focus-within:border-slate-300 dark:focus-within:border-white/20 focus-within:bg-white dark:focus-within:bg-black/40 transition-all overflow-hidden"

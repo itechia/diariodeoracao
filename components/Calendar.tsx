@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Prayer, PrayerCategory } from '../types';
+import { Prayer, Category } from '../types';
 
 interface CalendarProps {
   currentDate: Date;
@@ -9,6 +9,7 @@ interface CalendarProps {
   setSelectedDate: (date: Date) => void;
   prayers: Prayer[];
   onAddClick: () => void;
+  categories?: Category[];
 }
 
 const Calendar: React.FC<CalendarProps> = ({
@@ -17,7 +18,8 @@ const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   setSelectedDate,
   prayers,
-  onAddClick
+  onAddClick,
+  categories
 }) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -56,15 +58,10 @@ const Calendar: React.FC<CalendarProps> = ({
     setSelectedDate(today);
   };
 
-  const getCategoryColor = (cat: PrayerCategory) => {
-    switch (cat) {
-      case PrayerCategory.GRATIDAO: return 'bg-amber-500';
-      case PrayerCategory.INTERCESSAO: return 'bg-purple-500';
-      case PrayerCategory.CRESCIMENTO: return 'bg-emerald-500';
-      case PrayerCategory.CONFISSAO: return 'bg-rose-500';
-      case PrayerCategory.FORCA: return 'bg-primary';
-      default: return 'bg-slate-500';
-    }
+  const getCategoryColor = (catName: string) => {
+    const cat = categories?.find(c => c.name === catName);
+    const theme = cat?.colorTheme || 'slate';
+    return `bg-${theme}-500`;
   };
 
   const getPrayersForDay = (date: Date) => {
