@@ -206,7 +206,7 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
   const suggestions = ["Resumo da minha jornada", "Sugestão de oração", "Versículo de conforto", "Dicas de disciplina"];
 
   return (
-    <div className="flex flex-col md:flex-row h-full relative">
+    <div className="flex flex-col md:flex-row h-full relative overflow-hidden">
 
       {/* Mobile Sidebar Toggle */}
       <button
@@ -256,13 +256,13 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
       </aside>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full relative overflow-hidden bg-white dark:bg-background-dark">
+      <div className="flex-1 flex flex-col h-full relative bg-white dark:bg-background-dark overflow-hidden">
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-0 scroll-smooth" ref={scrollRef}>
+        {/* Messages Container */}
+        <div className="flex-1 overflow-y-auto w-full scroll-smooth" ref={scrollRef}>
           <div className="max-w-3xl mx-auto flex flex-col min-h-full p-4 md:p-8">
             {!currentSessionId && messages.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+              <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in duration-500 my-auto">
                 <h1 className="text-4xl md:text-5xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 mb-2 tracking-tight">
                   Olá, {userName.split(' ')[0]}
                 </h1>
@@ -271,12 +271,14 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
                 </h2>
               </div>
             ) : (
-              <div className="w-full space-y-6 pb-24">
+              <div className="w-full space-y-6">
                 {messages.map((m) => (
                   <div key={m.id} className={`flex gap-4 w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {m.role === 'model' && (
                       <div className="size-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center shrink-0 mt-1">
-                        <span className="material-symbols-outlined text-sm text-blue-500">sparkle</span>
+                        <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 22C12 22 13.5 16.5 19 12C13.5 7.5 12 2 12 2C12 2 10.5 7.5 5 12C10.5 16.5 12 22 12 22Z" />
+                        </svg>
                       </div>
                     )}
 
@@ -295,15 +297,14 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
                         {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-
-                    {/* Helper spacer for user to keep alignment if needed, though justify-end handles it */}
-                    {m.role === 'user' && <div className="w-0" />}
                   </div>
                 ))}
                 {isLoading && (
                   <div className="flex gap-4 w-full justify-start">
                     <div className="size-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center shrink-0 animate-pulse">
-                      <span className="material-symbols-outlined text-sm text-blue-500">sparkle</span>
+                      <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 22C12 22 13.5 16.5 19 12C13.5 7.5 12 2 12 2C12 2 10.5 7.5 5 12C10.5 16.5 12 22 12 22Z" />
+                      </svg>
                     </div>
                     <div className="flex items-center gap-1 h-8">
                       <div className="size-2 bg-slate-300 dark:bg-slate-600 rounded-full animate-bounce delay-0"></div>
@@ -312,13 +313,14 @@ const ChatView: React.FC<ChatViewProps> = ({ prayers, userName }) => {
                     </div>
                   </div>
                 )}
+                <div className="h-4"></div> {/* Spacer */}
               </div>
             )}
           </div>
         </div>
 
-        {/* Input Area - Fixed at bottom */}
-        <div className="p-4 bg-white dark:bg-background-dark border-t border-slate-100 dark:border-white/5">
+        {/* Input Area - Flex Item (Not Absolute) */}
+        <div className="p-4 bg-white dark:bg-background-dark border-t border-slate-100 dark:border-white/5 w-full shrink-0 z-20">
           <div className="max-w-3xl mx-auto w-full">
             <form
               onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}

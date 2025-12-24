@@ -26,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedDateLabel,
   viewMode
 }) => {
+  if (viewMode === 'chat') return null;
 
   const streakStats = useMemo(() => {
     const uniqueDates = Array.from(new Set(
@@ -66,29 +67,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const renderContent = () => {
-    if (viewMode === 'chat') {
-      return (
-        <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right duration-500">
-          <div className="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-surface-border shadow-sm">
-            <h4 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">auto_awesome</span>
-              Mentoria Baseada em Você
-            </h4>
-            <p className="text-sm text-slate-500 dark:text-text-secondary leading-relaxed">
-              O Mentor IA analisa suas orações para oferecer reflexões que realmente tocam o seu momento atual.
-            </p>
-          </div>
-
-          <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-2xl border border-primary/20 shadow-sm border-dashed">
-            <h4 className="font-bold text-primary mb-2">Privacidade Total</h4>
-            <p className="text-sm text-slate-600 dark:text-slate-300 italic">
-              Suas conversas com a IA são privadas e servem apenas para fortalecer sua caminhada pessoal.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
     if (viewMode === 'configuracoes') {
       return (
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right duration-500">

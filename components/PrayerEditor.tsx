@@ -146,9 +146,9 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col animate-in fade-in duration-200 h-[100dvh]">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-surface-border">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-surface-border shrink-0">
                 <button onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:text-text-secondary dark:hover:text-white transition-colors">
                     Cancelar
                 </button>
@@ -164,7 +164,7 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto p-4 md:p-6">
+            <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto p-4 md:p-6 pb-24">
                 {/* Date & Category */}
                 <div className="flex gap-4 mb-6">
                     <div className="flex-1">
@@ -203,6 +203,7 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
                     onChange={e => setContent(e.target.value)}
                     placeholder="Escreva seus pensamentos..."
                     className="w-full min-h-[200px] text-lg leading-relaxed bg-transparent border-none placeholder-slate-300 dark:placeholder-slate-700 text-slate-700 dark:text-slate-200 focus:ring-0 px-0 resize-none"
+                    style={{ minHeight: 'calc(100vh - 300px)' }}
                 />
 
                 {/* Image Grid */}
@@ -224,18 +225,27 @@ const PrayerEditor: React.FC<PrayerEditorProps> = ({ isOpen, onClose, onSubmit, 
             </div>
 
             {/* Toolbar */}
-            <div className="border-t border-slate-100 dark:border-surface-border p-3 bg-white/80 dark:bg-black/80 backdrop-blur-md">
+            <div
+                className="border-t border-slate-100 dark:border-surface-border p-3 bg-white/80 dark:bg-black/80 backdrop-blur-md shrink-0"
+                style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+            >
                 <div className="max-w-2xl mx-auto flex items-center gap-4">
-                    <label className="p-2 text-slate-500 hover:text-primary hover:bg-slate-50 dark:hover:bg-white/10 rounded-full cursor-pointer transition-all">
+                    <label className="p-3 text-slate-500 hover:text-primary hover:bg-slate-50 dark:hover:bg-white/10 rounded-full cursor-pointer transition-all flex items-center justify-center">
                         <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                        <span className="material-symbols-outlined">image</span>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
                     </label>
 
                     <button
                         onClick={toggleDictation}
-                        className={`p-2 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse' : 'text-slate-500 hover:text-primary hover:bg-slate-50 dark:hover:bg-white/10'}`}
+                        className={`p-3 rounded-full transition-all flex items-center justify-center ${isListening ? 'text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse' : 'text-slate-500 hover:text-primary hover:bg-slate-50 dark:hover:bg-white/10'}`}
                     >
-                        <span className="material-symbols-outlined">{isListening ? 'mic_off' : 'mic'}</span>
+                        {isListening ? (
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                        ) : (
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                        )}
                     </button>
 
                     {voiceError && <span className="text-xs text-red-500">{voiceError}</span>}
